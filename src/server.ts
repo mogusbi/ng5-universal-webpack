@@ -9,8 +9,8 @@ import 'zone.js/dist/zone-node';
 enableProdMode();
 
 const app: express.Application = express();
-const staticPath: string = join(__dirname, '../www');
-const {AppServerModuleNgFactory, LAZY_MODULE_MAP} = require('../../dist/bin/app');
+const staticPath: string = join(__dirname, '../dist/browser');
+const {AppServerModuleNgFactory, LAZY_MODULE_MAP} = require('../dist/server/app');
 const port: number = 4000;
 
 app.engine('html', ngExpressEngine({

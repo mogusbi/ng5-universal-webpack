@@ -138,4 +138,118 @@ const client = {
   }
 };
 
-module.exports = client;
+const server = {
+  entry: {
+    app: resolve('src/main-server.ts')
+  },
+  externals: [
+    /^@angular/,
+    /^@ng/,
+    (_, request, callback) => {
+      if (request.match(/^\.{0,2}\//)) {
+        return callback();
+      }
+
+      try {
+        const e = require.resolve(request);
+        if (/node_modules/.test(e)) {
+          callback(null, request);
+        } else {
+          callback();
+        }
+      } catch (e) {
+        callback();
+      }
+    }
+  ],
+  module: {
+    rules: [
+      {
+        exclude: [
+          /\.(e2e-spec|spec|mock)\.ts$/
+        ],
+        test: /(?:\.ngfactory\.js|\.ngstyle\.js|\.ts)$/,
+        use: [
+          {
+            loader: '@angular-devkit/build-optimizer/webpack-loader',
+            options: {
+              sourceMap: false
+            }
+          },
+          '@ngtools/webpack'
+        ]
+      },
+      {
+        loader: {
+          loader: 'html-loader',
+          options: {
+            caseSensitive: true,
+            collapseWhitespace: true,
+            minimize: true,
+            removeComments: true,
+            removeOptionalTags: true,
+            removeScriptTypeAttributes: true,
+            removeStyleLinkTypeAttributes: true,
+            sortAttributes: true,
+            sortClassName: true,
+            removeAttributeQuotes: false
+          }
+        },
+        test: /\.html$/
+      }
+    ]
+  },
+  node: false,
+  output: {
+    filename: '[name].js',
+    libraryTarget: 'commonjs',
+    path: resolve('dist/server')
+  },
+  plugins: [
+    new DefinePlugin({
+      'process.env': {
+        'NODE_ENV': JSON.stringify(process.env.NODE_ENV)
+      }
+    }),
+    new ModuleConcatenationPlugin(),
+    new NoEmitOnErrorsPlugin(),
+    new UglifyJsPlugin({
+      compress: {
+        passes: 3,
+        pure_getters: true
+      },
+      ecma: 5,
+      ie8: false,
+      mangle: true,
+      output: {
+        ascii_only: true,
+        comments: false
+      }
+    }),
+    new LoaderOptionsPlugin({
+      htmlLoader: {
+        caseSensitive: true,
+        minimize: true,
+        removeAttributeQuotes: false
+      }
+    }),
+    new PurifyPlugin(),
+    new AngularCompilerPlugin({
+      entryModule: resolve('src/app/app-server.module#AppServerModule'),
+      mainPath: resolve('src/main-server.ts'),
+      tsConfigPath: resolve('tsconfig-server.json')
+    })
+  ],
+  resolve: {
+    extensions: [
+      '.ts',
+      '.js'
+    ]
+  },
+  target: 'node'
+};
+
+module.exports = [
+  client,
+  server
+];
